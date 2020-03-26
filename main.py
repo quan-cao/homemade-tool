@@ -212,13 +212,14 @@ root.title("Homemade tool")
 
 ## App Info
 session_id = generate_session_id()
-version = '0.1.1'
+version = '0.1.2'
 
 ## End App Info
 
 # Load Old Users List
 if path.exists('oldUsersList.csv'):
     oldUsersList = pd.read_csv('oldUsersList.csv')
+    oldUsersList = oldUsersList.id
     statusBarText = 'Status Bar is cool'
 else:
     statusBarText = 'Old users list not found'
@@ -327,7 +328,6 @@ getOldUsersBtn.grid(row=1, column=1)
 
 # Scraping Button
 scrapingBtn = ttk.Button(lowFrame, text='Start Scraping', command=start_scraping_thread)
-# scrapingBtn = ttk.Button(lowFrame, text='Start Scraping', command=scraping)
 scrapingBtn.grid(row=2, columnspan=2, ipadx=5, ipady=5)
 
 lowFrame.pack()
