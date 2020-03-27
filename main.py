@@ -128,7 +128,7 @@ def scraping(): # Web Scraping
                                         facebook = 'https://www.facebook.com/' + page
                                         try:
                                             pageInfo = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, 'content')))
-                                            phoneList = re.findall(r'\b(((0|84|\+84)[-.\s]?\d{1,3}[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4})|((1800|1900)[-.\s]\d+))\b', pageInfo.text)
+                                            phoneList = re.findall(r'\b(((0|84|\+84)[-.\s]?\d{1,3}[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4})|((1800|1900)[-.\s]\d+[-.\s]\d+))\b', pageInfo.text)
                                         except:
                                             phoneList = []
                                         if phoneList != []:
