@@ -12,7 +12,7 @@ import accounts
 from utils.session import generate_session_id
 from utils.gsheetApi import play_with_gsheet
 from utils.checkValidation import check_validation
-from utils.getOldUsers import get_old_users
+from utils.getRegex import get_regex
 from utils.quitAction import quit_action
 from utils.addWindows import add_manual, add_about
 from utils.pushTele import push_tele
@@ -26,21 +26,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 
 root = tk.Tk()
-
-def get_regex(kwVar, blacklist=False):
-    if kwVar != '':
-        kwVarList = kwVar.split(',')
-        kwList = []
-        for kw in kwVarList:
-            kwList.append(kw.strip())
-        kwRegex = '|'.join(kwList)
-        return kwRegex
-    else:
-        if blacklist:
-            kwVar = 'thistextshouldneverbefound'
-        else:
-            kwVar = '.*'
-    return kwVar
 
 def chrome_path(): # Select chromedriver path
     global chromePath
@@ -68,7 +53,7 @@ def scraping(): # Web Scraping
     else:
         check_validation(root, 'user', version=version, email=emailVar.get(), teleId=teleIdVar.get())
 
-        statusBar['text'] = 'Scraping'
+        statusBar['text'] = 'Scraping...'
 
         options = webdriver.ChromeOptions()
         options.add_argument("--disable-notifications")
@@ -126,24 +111,24 @@ def scraping(): # Web Scraping
                             if (e.text.find('Sponsored') != -1 or e.text.find('Được tài trợ') != -1):
                                 if not re.findall(blacklistKwRegex, e.text, re.IGNORECASE) and re.findall(kwRegex, e.text, re.IGNORECASE):
                                     try:
-                                        page = WebDriverWait(e, 10).until(EC.presence_of_element_located((By.CLASS_NAME, '_5pb8'))).get_attribute('href').split('/')[3]
+                                        page = WebDriverWait(e, 20).until(EC.presence_of_element_located((By.CLASS_NAME, '_5pb8'))).get_attribute('href').split('/')[3]
                                     except:
                                         try:
                                             page = e.find_element_by_link_text(e.find_element_by_class_name('_7tae').text).get_attribute('href').split('/')[3]
                                         except:
                                             if e.find_element_by_class_name('_7tae').text.find('like') != -1:
-                                                page = e.find_element_by_link_text(e.find_element_by_class_name('_7tae').text.split(' like ')[1]).get_attribute('href').split('/')[3]
+                                                page = e.find_element_by_link_text(re.sub('\.$', '', e.find_element_by_class_name('_7tae').text.split(' like ')[1])).get_attribute('href').split('/')[3]
                                             elif e.find_element_by_class_name('_7tae').text.find('thích') != -1:
-                                                page = e.find_element_by_link_text(e.find_element_by_class_name('_7tae').text.split(' thích ')[1]).get_attribute('href').split('/')[3]
+                                                page = e.find_element_by_link_text(re.sub('\.$', '', e.find_element_by_class_name('_7tae').text.split(' thích ')[1])).get_attribute('href').split('/')[3]
                                     if page not in pageSet:
                                         # Get page info
                                         driver.execute_script(f"window.open('{'https://www.facebook.com/' + page + '/about?ref=page_internal'}');")
                                         driver.switch_to.window(driver.window_handles[-1])
-                                        name = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, '_64-f'))).text
+                                        name = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CLASS_NAME, '_64-f'))).text
                                         facebook = 'https://www.facebook.com/' + page
                                         try:
-                                            pageInfo = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'content')))
-                                            phoneList = re.findall(r'\b((0|84|\+84)[-.\s]?\d{1,3}[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4})', pageInfo.text)
+                                            pageInfo = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, 'content')))
+                                            phoneList = re.findall(r'\b(((0|84|\+84)[-.\s]?\d{1,3}[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4})|((1800|1900)[-.\s]\d+))\b', pageInfo.text)
                                         except:
                                             phoneList = []
                                         if phoneList != []:
@@ -189,6 +174,14 @@ def scraping(): # Web Scraping
                     requests.post("https://api.telegram.org/bot{token}/sendMessage".format(token=accounts.botToken), data=data)
                     continue
 
+def get_old_users(statusBar):
+    global oldUsersList
+    statusBar['text'] = 'Getting old users...'
+    dfOldUsers = play_with_gsheet(accounts.spreadsheetIdHubspot, 'Sheet1')
+    oldUsersList = dfOldUsers.id
+    oldUsersList.to_csv('oldUsersList.csv', index=False)
+    statusBar['text'] = 'Old users updated.'
+
 def start_scraping_thread():
     global scrapingThread
     scrapingThread = threading.Thread(target=scraping, daemon=True, name='scraping_thread')
@@ -196,7 +189,7 @@ def start_scraping_thread():
 
 def start_get_old_users_thread():
     global oldUsersThread
-    oldUsersThread = threading.Thread(target=get_old_users, args=(root, statusBar,), daemon=True, name='get_old_users_thread')
+    oldUsersThread = threading.Thread(target=get_old_users, args=(statusBar,), daemon=True, name='get_old_users_thread')
     oldUsersThread.start()
 
 def start_append_gsheet():
@@ -212,7 +205,7 @@ root.title("Homemade tool")
 
 ## App Info
 session_id = generate_session_id()
-version = '0.1.2'
+version = '0.1.3'
 
 ## End App Info
 

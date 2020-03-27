@@ -1,3 +1,8 @@
+# Ver. 0.1.3
+- Better catch ads posts.
+- Fix not update current old users list.
+- Catch phone numbers with 1800, 1900 head.
+
 # Ver. 0.1.2 HOTFIX
 - Fix not filter out old users.
 

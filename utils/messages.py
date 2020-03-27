@@ -31,8 +31,8 @@ manualText = """In order to use this tool, PLEASE FOLLOW THESE STEPS:
 - Step 6: Click on Browse Chromedriver and navigate new pop-up window to chromedriver.exe (at step 3).
 
 - Step 7: Click on Get Old Users to update list of AhaMove's users.
-    + For first-time use: This action with download list of AhaMove's users for later use;
-        At this state, status bar will show: "Old users list not found."
+    + For first-time use: At this state, status bar will show: "Old users list not found."
+        This action will download list of AhaMove's users for later use;
     + After that, you should get old users once a day to keep it up-to-date.
 
 - Step 8: Click on Start Scraping.
