@@ -1,3 +1,6 @@
+# Ver. 0.2.0
+- Add feature crawl groups.
+
 # Ver. 0.1.3
 - Better catch ads posts.
 - Fix not update current old users list.
