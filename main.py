@@ -28,10 +28,11 @@ def get_old_users(statusBar):
     global oldUsersList
     statusBar['text'] = 'Getting old users...'
     dfOldUsers = play_with_gsheet(accounts.spreadsheetIdHubspot, 'Sheet1')
-    oldUsersList['id'] = oldUsersList.id.astype(str)
+    dfOldUsers['id'] = dfOldUsers.id.astype(str)
     oldUsersList = dfOldUsers.id
     oldUsersList.to_csv('oldUsersList.csv', index=False)
     statusBarText = 'Old users updated.'
+    statusBar['text'] = statusBarText
 
 def start_get_old_users_thread():
     global oldUsersThread
