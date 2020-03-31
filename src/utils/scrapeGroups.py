@@ -69,11 +69,11 @@ def get_fb_posts(driver, teleId, groupId, kwRegex, blacklistKwRegex):
     dataframe = dataframe.drop_duplicates(subset='content')
     return dataframe
 
-def scrape_groups(master, groupIdListVar, version, statusBar, chromePath, session_id, keywordsVar, blacklistKeywordsVar, emailVar, passVar, teleIdVar, oldUsersList, error=None):
+def scrape_groups(groupIdListVar, version, statusBar, chromePath, session_id, keywordsVar, blacklistKeywordsVar, emailVar, passVar, teleIdVar, oldUsersList):
     if (not emailVar.get()) or (not passVar.get()):
         statusBar['text'] = 'Please fill Facebook account'
     else:
-        check_validation(master, 'user', version=version, email=emailVar.get(), teleId=teleIdVar.get())
+        check_validation('user', version, emailVar.get(), teleIdVar.get())
 
         statusBar['text'] = 'Scraping in Groups...'
 
@@ -107,7 +107,7 @@ def scrape_groups(master, groupIdListVar, version, statusBar, chromePath, sessio
         log_in_facebook(driver, email, password)
 
         beginCrawlDf = pd.DataFrame({'session_id':session_id, 'version':version, 'action':'begin_crawl_groups', 'time':datetime.now(), 'email':email,
-            'telegram_id':teleId, 'keywords':keywords, 'blacklist_keywords':blacklistKeywords, 'group_id': [groupIdList]}, index=[0])
+            'telegram_id':teleId, 'keywords':keywords, 'blacklist_keywords':blacklistKeywords, 'group_id': groupIdListVar.get()}, index=[0])
         play_with_gsheet(accounts.spreadsheetIdData, 'Sheet1', beginCrawlDf, 'append')
 
         try:
@@ -138,7 +138,7 @@ def scrape_groups(master, groupIdListVar, version, statusBar, chromePath, sessio
                     if type(err).__name__ in ['WebDriverException', 'NoSuchWindowException', 'ProtocolError']:
                         statusBar['text'] = 'Scrape Ended'
                         endCrawlDf = pd.DataFrame({'session_id':session_id, 'version':version, 'action':'end_crawl_groups', 'time':datetime.now(), 'email':email,
-                                    'telegram_id':teleId, 'keywords':keywords, 'blacklist_keywords':blacklistKeywords, 'group_id':[groupIdList]}, index=[0])
+                                    'telegram_id':teleId, 'keywords':keywords, 'blacklist_keywords':blacklistKeywords, 'group_id':groupIdListVar.get()}, index=[0])
                         play_with_gsheet(accounts.spreadsheetIdData, 'Sheet1', endCrawlDf, 'append')
                         break
                     elif type(err).__name__ == 'MaxRetryError':

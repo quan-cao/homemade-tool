@@ -25,12 +25,12 @@ def log_in_facebook(driver, email, password):
     time.sleep(1)
     driver.switch_to.active_element.send_keys(Keys.RETURN)
 
-def scrape_ads(master, version, statusBar, chromePath, session_id, keywordsVar, blacklistKeywordsVar, emailVar, passVar, teleIdVar, oldUsersList):
+def scrape_ads(version, statusBar, chromePath, session_id, keywordsVar, blacklistKeywordsVar, emailVar, passVar, teleIdVar, oldUsersList):
 
     if (not emailVar.get()) or (not passVar.get()):
         statusBar['text'] = 'Please fill Facebook account'
     else:
-        check_validation(master, 'user', version=version, email=emailVar.get(), teleId=teleIdVar.get())
+        check_validation('user', version, emailVar.get(), teleIdVar.get())
 
         statusBar['text'] = 'Scraping for Ads...'
 

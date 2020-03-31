@@ -2,7 +2,7 @@ from utils.gsheetApi import play_with_gsheet
 from tkinter import messagebox
 import accounts
 
-def check_validation(master, type, version=None, email=None, teleId=None):
+def check_validation(type, version=None, email=None, teleId=None):
     try:
         checkVersionDf = play_with_gsheet(accounts.spreadsheetIdInfo, 'Sheet1')
     except:
