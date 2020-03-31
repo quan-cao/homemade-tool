@@ -4,13 +4,9 @@ from tkinter import messagebox
 
 import os, sys, threading
 import pandas as pd
-
 import accounts
 
-from utils.session import generate_session_id
-from utils.gsheetApi import play_with_gsheet
-from utils.checkValidation import check_validation
-
+from utils import generate_session_id, play_with_gsheet, check_validation
 from cls import *
 
 class HomemadeApplication(tk.Tk):

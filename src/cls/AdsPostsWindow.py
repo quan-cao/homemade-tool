@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import threading
 
-from utils.scrapeAds import scrape_ads
+from utils import scrape_ads
 
 class AdsPostsWindow(tk.Frame):
     def __init__(self, parent, controller):

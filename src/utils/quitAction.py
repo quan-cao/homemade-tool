@@ -1,7 +1,8 @@
-from utils.gsheetApi import play_with_gsheet
 import pandas as pd
-import accounts
 from datetime import datetime
+
+import accounts
+from utils import play_with_gsheet
 
 def quit_action(dct):
     session_id = dct['session_id']

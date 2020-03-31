@@ -5,12 +5,7 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 
-from utils.pushTele import push_tele
-from utils.getRegex import get_regex
-from utils.gsheetApi import play_with_gsheet
-from utils.checkValidation import check_validation
-from utils.resourcePath import resource_path
-from utils.messages import *
+from utils import push_tele, get_regex, play_with_gsheet, check_validation, resource_path
 
 import pandas as pd
 import accounts

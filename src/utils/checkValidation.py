@@ -1,4 +1,4 @@
-from utils.gsheetApi import play_with_gsheet
+from utils import play_with_gsheet
 from tkinter import messagebox
 import accounts
 

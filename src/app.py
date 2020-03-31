@@ -1,5 +1,5 @@
 from cls import HomemadeApplication
-from utils.quitAction import quit_action
+from utils import quit_action
 
 if __name__ == "__main__":
     app = HomemadeApplication()

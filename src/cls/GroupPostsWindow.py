@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import threading
 
-from utils.scrapeGroups import scrape_groups
+from utils import scrape_groups
 
 class GroupPostsWindow(tk.Frame):
     def __init__(self, parent, controller):
