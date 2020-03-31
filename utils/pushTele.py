@@ -23,7 +23,8 @@ def push_tele(teleId, _type, name=None, facebook=None, phone=None, df=None):
             content = df.iloc[i]['content']
             phone = df.iloc[i]['phone']
             post = df.iloc[i]['post']
-            staff = df.iloc[i]['staff']
+            group = df.iloc[i]['group']
+            post_time = df.iloc[i]['time']
 
             text = """
 <b>NEW POST</b>
@@ -31,7 +32,7 @@ def push_tele(teleId, _type, name=None, facebook=None, phone=None, df=None):
 <b>Facebook:</b> {profile}
 <b>Phone:</b> {phone}
 <b>Link:</b> {post}
-{staff}""".format(content=content, profile=profile, phone=phone, post=post, staff=staff)
+<b>Post time:</b> {post_time}""".format(content=content, profile=profile, phone=phone, post=post, post_time=post_time)
             data = {
                 'chat_id': teleId,
                 'text': text,

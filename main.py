@@ -4,8 +4,7 @@ from tkinter import E, W, X, BOTTOM, SUNKEN
 from tkinter import filedialog
 
 import pandas as pd
-import os, sys, re, threading, requests, time
-from os import path
+import os, threading
 from datetime import datetime
 import accounts
 
@@ -16,8 +15,7 @@ from utils.quitAction import quit_action
 from utils.addWindows import add_manual, add_about
 from utils.resourcePath import resource_path
 from utils.scrapeAds import scrape_ads
-
-root = tk.Tk()
+from utils.scrapeGroups import scrape_groups
 
 def chrome_path(): # Select chromedriver path
     global chromePath
@@ -26,57 +24,115 @@ def chrome_path(): # Select chromedriver path
     chromePath = filedialog.askopenfilename(initialdir='/', title='Select File', filetypes=(('Executables', '*.exe'), ('All files', '*.*')))
     statusBar['text'] = statusBarText
 
-def scraping_groups():
-    pass
-
-def start_scrape_groups_thread():
-    global scrapeGroupsThread
-    scrapeGroupsThread = threading.Thread(target=scrape_groups, args=(root, groupIdList, version, statusBar, chromePath, session_id, keywordsVar2, blacklistKeywordsVar2, emailVar2, passVar2, teleIdVar2, oldUsersList), daemon=True, name='scraping_groups_thread')
-    scrapeGroupsThread.start()
-
 def get_old_users(statusBar):
     global oldUsersList
     statusBar['text'] = 'Getting old users...'
     dfOldUsers = play_with_gsheet(accounts.spreadsheetIdHubspot, 'Sheet1')
+    oldUsersList['id'] = oldUsersList.id.astype(str)
     oldUsersList = dfOldUsers.id
     oldUsersList.to_csv('oldUsersList.csv', index=False)
-    statusBar['text'] = 'Old users updated.'
-
-def start_scrape_ads_thread():
-    global scrapeAdsThread
-    scrapeAdsThread = threading.Thread(target=scrape_ads, args=(root, version, statusBar, chromePath, session_id, keywordsVar, blacklistKeywordsVar, emailVar, passVar, teleIdVar, oldUsersList,), daemon=True, name='scraping_ads_thread')
-    scrapeAdsThread.start()
+    statusBarText = 'Old users updated.'
 
 def start_get_old_users_thread():
     global oldUsersThread
     oldUsersThread = threading.Thread(target=get_old_users, args=(statusBar,), daemon=True, name='get_old_users_thread')
     oldUsersThread.start()
 
+def start_scrape_ads_thread():
+    global scrapeAdsThread
+    scrapeAdsThread = threading.Thread(target=scrape_ads, args=(root, version, statusBar, chromePath, session_id, keywordsVar, blacklistKeywordsVar,
+                                    emailVar, passVar, teleIdVar, oldUsersList,), daemon=True, name='scraping_ads_thread')
+    scrapeAdsThread.start()
+
+def start_scrape_groups_thread():
+    global scrapeGroupsThread
+    scrapeGroupsThread = threading.Thread(target=scrape_groups, args=(root, groupIdListVar, version, statusBar, chromePath, session_id, keywordsVar2,
+                                        blacklistKeywordsVar2, emailVar2, passVar2, teleIdVar2, oldUsersList), daemon=True, name='scraping_groups_thread')
+    scrapeGroupsThread.start()
+
 def start_append_gsheet():
-    df = pd.DataFrame({'session_id':session_id, 'version':version, 'action':'start_app', 'time':datetime.now(), 'email':emailDefault,
-                'telegram_id':teleIdDefault, 'keywords':'', 'blacklist_keywords':''}, index=[0])
+    df = pd.DataFrame({'session_id':session_id, 'version':version, 'action':'start_app', 'time':datetime.now(),
+                    'email':[[emailDefault, emailDefault2]] if emailDefault != emailDefault2 else emailDefault,
+                    'telegram_id':[[teleIdDefault, teleIdDefault2]] if teleIdDefault != teleIdDefault2 else teleIdDefault,
+                    'keywords':'', 'blacklist_keywords':'', 'group_id': groupIdListDefault}, index=[0])
     appendThread = threading.Thread(target=play_with_gsheet, args=(accounts.spreadsheetIdData, 'Sheet1', df, 'append'), daemon=True)
     appendThread.start()
 
-## Window Info
+root = tk.Tk()
+## Window/App Info
 # root.geometry('600x400') # Default window size
 root.resizable(0,0) # Lock window size
 root.title("Homemade tool")
 
-## App Info
 session_id = generate_session_id()
 version = '0.2.0'
-
-## End App Info
+## End Window/App Info
 
 # Load Old Users List
-if path.exists('oldUsersList.csv'):
-    oldUsersList = pd.read_csv('oldUsersList.csv')
-    oldUsersList = oldUsersList.id
+if os.path.exists('oldUsersList.csv'):
+    oldUsersList = pd.read_csv('oldUsersList.csv', dtype={'id':str})
+    oldUsersList = oldUsersList.id.tolist()
     statusBarText = 'Status Bar is cool'
 else:
     statusBarText = 'Old users list not found'
     oldUsersList = []
+
+# Load default accounts
+if not os.path.exists('info.txt'):
+    with open('info.txt', 'w', encoding='utf-8') as f:
+        f.write('\n'*11)
+    with open('info.txt', 'r', encoding='utf-8') as f:
+        info = f.read()
+        info = info.split('\n')
+else:
+    with open('info.txt', 'r', encoding='utf-8') as f:
+        info = f.read()
+        info = info.split('\n')
+
+try:
+    emailDefault = info[0].strip()
+    passDefault = info[1].strip()
+    teleIdDefault = info[2].strip()
+    keywordsDefault = info[3].strip()
+    blacklistKeywordsDefault = info[4].strip()
+    chromePath = info[5].strip()
+    emailDefault2 = info[6].strip()
+    passDefault2 = info[7].strip()
+    teleIdDefault2 = info[8].strip()
+    keywordsDefault2 = info[9].strip()
+    blacklistKeywordsDefault2 = info[10].strip()
+    groupIdListDefault = info[11].strip()
+except:
+    emailDefault = ''
+    passDefault = ''
+    teleIdDefault = ''
+    keywordsDefault = ''
+    blacklistKeywordsDefault = ''
+    chromePath = ''
+    emailDefault2 = ''
+    passDefault2 = ''
+    teleIdDefault2 = ''
+    keywordsDefault2 = ''
+    blacklistKeywordsDefault2 = ''
+    groupIdListDefault = ''
+
+# Bunch of Variable Holders
+emailVar = tk.StringVar(value=emailDefault)
+passVar = tk.StringVar(value=passDefault)
+teleIdVar = tk.StringVar(value=teleIdDefault)
+rememberMeVar = tk.IntVar()
+rememberMeVar.set(1)
+keywordsVar = tk.StringVar(value=keywordsDefault)
+blacklistKeywordsVar = tk.StringVar(value=blacklistKeywordsDefault)
+
+emailVar2 = tk.StringVar(value=emailDefault2)
+passVar2 = tk.StringVar(value=passDefault2)
+teleIdVar2 = tk.StringVar(value=teleIdDefault2)
+rememberMeVar2 = tk.IntVar()
+rememberMeVar2.set(1)
+keywordsVar2 = tk.StringVar(value=keywordsDefault2)
+blacklistKeywordsVar2 = tk.StringVar(value=blacklistKeywordsDefault2)
+groupIdListVar = tk.StringVar(value=groupIdListDefault)
 
 ## Menu Bar
 menu = tk.Menu(root)
@@ -90,70 +146,18 @@ helpMenu.add_command(label='About', command=lambda: add_about(root))
 root.config(menu=menu)
 ## End Menu Bar
 
-## Status Bar
-statusBar = tk.Label(root, text=statusBarText, bd=1, relief=SUNKEN, anchor=W)
-statusBar.pack(side=BOTTOM, fill=X)
-## End Status Bar
-
-# Load default accounts
-
-with open('info.txt', 'r', encoding='utf-8') as f:
-    try:
-        info = f.read()
-        info = info.split('\n')
-        emailDefault = info[0].strip()
-        passDefault = info[1].strip()
-        teleIdDefault = info[2].strip()
-        keywordsDefault = info[3].strip()
-        blacklistKeywordsDefault = info[4].strip()
-        chromePath = info[5].strip()
-    except:
-        emailDefault = ''
-        passDefault = ''
-        teleIdDefault = ''
-        keywordsDefault = ''
-        blacklistKeywordsDefault = ''
-        chromePath = ''
-
-    try:
-        emailDefault2 = info[6].strip()
-        passDefault2 = info[7].strip()
-        teleIdDefault2 = info[8].strip()
-        keywordsDefault2 = info[9].strip()
-        blacklistKeywordsDefault2 = info[10].strip()
-        groupIdListDefault = info[11].strip()
-    except:
-        emailDefault2 = ''
-        passDefault2 = ''
-        teleIdDefault2 = ''
-        keywordsDefault2 = ''
-        blacklistKeywordsDefault2 = ''
-        groupIdListDefault = ''
-
-# Bunch of Variable Holders
-emailVar = tk.StringVar(value=emailDefault)
-passVar = tk.StringVar(value=passDefault)
-teleIdVar = tk.StringVar(value=teleIdDefault)
-rememberMeVar = tk.IntVar()
-rememberMeVar.set(1)
-keywordsVar = tk.StringVar(value=keywordsDefault)
-blacklistKeywordsVar = tk.StringVar(value=blacklistKeywordsDefault)
-
-
-## Tab control
+#### Tab control
 tab_control = ttk.Notebook(root)
 
 tab1 = tk.Frame(tab_control)
-tab2 = ttk.Frame(tab_control)
+tab2 = tk.Frame(tab_control)
 
 tab_control.add(tab1, text='Ads Posts')
 tab_control.add(tab2, text='Group Posts')
-## End tab control
 
-
-#### Tab 1
+## Tab 1
 ## Top Frame
-topFrame = tk.Frame(tab1)
+topFrame = tk.Frame(tab1, pady=10)
 
 # Email Row
 emailLabel = tk.Label(topFrame, text='Email')
@@ -214,20 +218,11 @@ scrapingBtn.grid(row=2, columnspan=2, ipadx=5, ipady=5)
 
 lowFrame.pack()
 ## End Low Frame
-#### End tab 1
+## End tab 1
 
-emailVar2 = tk.StringVar(value=emailDefault2)
-passVar2 = tk.StringVar(value=passDefault2)
-teleIdVar2 = tk.StringVar(value=teleIdDefault2)
-rememberMeVar2 = tk.IntVar()
-rememberMeVar2.set(1)
-keywordsVar2 = tk.StringVar(value=keywordsDefault2)
-blacklistKeywordsVar2 = tk.StringVar(value=blacklistKeywordsDefault2)
-groupIdListVar = tk.StringVar(value=groupIdListDefault)
-
-#### Tab 2
+## Tab 2
 ## Top Frame
-topFrame2 = tk.Frame(tab2)
+topFrame2 = tk.Frame(tab2, pady=5)
 
 # Email Row
 emailLabel2 = tk.Label(topFrame2, text='Email')
@@ -269,7 +264,7 @@ blacklistKeywordsEntry2 = tk.Entry(topFrame2, textvariable=blacklistKeywordsVar2
 blacklistKeywordsEntry2.grid(row=5, column=1, ipadx=15)
 
 # Group ID List
-groupIdListLabel = tk.Label(topFrame2, text='Group ID')
+groupIdListLabel = tk.Label(topFrame2, text='Group IDs')
 groupIdListLabel.grid(row=6, sticky=E)
 
 groupIdListEntry = tk.Entry(topFrame2, textvariable=groupIdListVar)
@@ -295,9 +290,15 @@ scrapingBtn.grid(row=2, columnspan=2, ipadx=5, ipady=5)
 
 lowFrame2.pack()
 ## End Low Frame
-#### End tab 2
+## End tab 2
 
 tab_control.pack(expand=1, fill='both')
+#### End tab control
+
+## Status Bar
+statusBar = tk.Label(root, text=statusBarText, bd=1, relief=SUNKEN, anchor=W)
+statusBar.pack(side=BOTTOM, fill=X)
+## End Status Bar
 
 # Check valid & send info
 check_validation(root, 'version', version=version)
@@ -305,7 +306,6 @@ start_append_gsheet()
 
 root.mainloop()
 
-dct = {}
 varStringList = ['session_id', 'version', 'emailVar', 'emailVar2', 'emailDefault', 'emailDefault2', 'passVar', 'passVar2', 'passDefault', 'passDefault2',
      'teleIdVar', 'teleIdVar2', 'teleIdDefault', 'teleIdDefault2', 'rememberMeVar', 'rememberMeVar2', 'keywordsVar', 'keywordsVar2', 
      'keywordsDefault', 'keywordsDefault2', 'blacklistKeywordsVar', 'blacklistKeywordsVar2', 'blacklistKeywordsDefault', 'blacklistKeywordsDefault2',
@@ -317,6 +317,7 @@ varList = [session_id, version, emailVar, emailVar2, emailDefault, emailDefault2
 
 varForDict = zip(varStringList, varList)
 
+dct = {}
 for k, v in varForDict:
     dct.setdefault(k, '')
     dct[k] = v

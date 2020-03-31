@@ -14,8 +14,7 @@ from utils.messages import *
 
 import pandas as pd
 import accounts
-import time
-import requests
+import time, requests, re
 from datetime import datetime
 
 def log_in_facebook(driver, email, password):
@@ -119,9 +118,15 @@ def scrape_ads(master, version, statusBar, chromePath, session_id, keywordsVar, 
                                                 phone = re.sub(r'^0', '84', phone)
                                                 if phone not in phones:
                                                     phones.append(phone)
+                                            checkPhone = 0
                                             for p in phones:
-                                                if p not in oldUsersList:
-                                                    push_tele(teleId, 'ads', name, facebook, phones)
+                                                if p in oldUsersList:
+                                                    checkPhone += 1
+                                            if checkPhone == 0:
+                                                push_tele(teleId, 'ads', name, facebook, phones)
+                                            else:
+                                                pageSet.add(page)
+                                                break
                                         else:
                                             phones = ''
                                             push_tele(teleId, 'ads', name, facebook, phones)

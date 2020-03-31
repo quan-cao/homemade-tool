@@ -14,8 +14,7 @@ from utils.messages import *
 
 import pandas as pd
 import accounts
-import time
-import requests
+import time, requests, re
 from datetime import datetime
 
 def log_in_facebook(driver, email, password):
@@ -26,8 +25,8 @@ def log_in_facebook(driver, email, password):
     time.sleep(1)
     driver.switch_to.active_element.send_keys(Keys.RETURN)
 
-def get_fb_posts(driver, groupId, kwRegex, blacklistKwRegex):
-    dataframe = pd.DataFrame(columns=['telegram_id', 'phone', 'time', 'content', 'post', 'profile'])
+def get_fb_posts(driver, teleId, groupId, kwRegex, blacklistKwRegex):
+    dataframe = pd.DataFrame(columns=['telegram_id', 'phone', 'time', 'content', 'post', 'profile', 'group'])
 
     driver.get(f'https://facebook.com/groups/{groupId}?sorting_setting=CHRONOLOGICAL')
     posts = WebDriverWait(driver, 5).until(EC.presence_of_all_elements_located((By.CLASS_NAME, 'userContentWrapper')))
@@ -50,7 +49,7 @@ def get_fb_posts(driver, groupId, kwRegex, blacklistKwRegex):
                     profile = profile.split('&')[0]
 
                 try:
-                    phone = re.search(r'([^0-9]+(0|84|\+84)[-.\s]?\d{1,3}[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4})', content).group()
+                    phone = re.search(r'\b([^0-9]+(0|84|\+84)[-.\s]?\d{1,3}[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4})\b', content).group()
                     phone = re.sub(r'\D+', '', phone)
                     phone = re.sub(r'^0', '84', phone)
                 except:
@@ -63,14 +62,14 @@ def get_fb_posts(driver, groupId, kwRegex, blacklistKwRegex):
 
                 post_time = pd.to_datetime(p.find_element_by_class_name('_5ptz').get_attribute('data-utime'), unit='s') + pd.DateOffset(hour=16)
 
-                dataframe = dataframe.append({'phone':phone, 'time':post_time, 'content':content,
-                                              'post':post, 'profile':profile}, ignore_index=True)
+                dataframe = dataframe.append({'telegram_id':teleId, 'phone':phone, 'time':post_time, 'content':content,
+                                              'post':post, 'profile':profile, 'group':groupId}, ignore_index=True)
             else: continue
     dataframe = dataframe.drop_duplicates(subset='post')
+    dataframe = dataframe.drop_duplicates(subset='content')
     return dataframe
 
-def scrape_ads(master, groupIdList, version, statusBar, chromePath, session_id, keywordsVar, blacklistKeywordsVar, emailVar, passVar, teleIdVar, oldUsersList):
-
+def scrape_groups(master, groupIdListVar, version, statusBar, chromePath, session_id, keywordsVar, blacklistKeywordsVar, emailVar, passVar, teleIdVar, oldUsersList, error=None):
     if (not emailVar.get()) or (not passVar.get()):
         statusBar['text'] = 'Please fill Facebook account'
     else:
@@ -102,34 +101,44 @@ def scrape_ads(master, groupIdList, version, statusBar, chromePath, session_id, 
         teleId = teleIdVar.get()
         keywords = keywordsVar.get()
         blacklistKeywords = blacklistKeywordsVar.get()
+        groupIdList = groupIdListVar.get()
+        groupIdList = groupIdList.split(',')
 
         log_in_facebook(driver, email, password)
 
-        beginCrawlDf = pd.DataFrame({'session_id':session_id, 'version':version, 'action':'begin_crawl_ads', 'time':datetime.now(), 'email':email,
-            'telegram_id':teleId, 'keywords':keywords, 'blacklist_keywords':blacklistKeywords}, index=[0])
+        beginCrawlDf = pd.DataFrame({'session_id':session_id, 'version':version, 'action':'begin_crawl_groups', 'time':datetime.now(), 'email':email,
+            'telegram_id':teleId, 'keywords':keywords, 'blacklist_keywords':blacklistKeywords, 'group_id': [groupIdList]}, index=[0])
         play_with_gsheet(accounts.spreadsheetIdData, 'Sheet1', beginCrawlDf, 'append')
 
         try:
-            play_with_gsheet(accounts.spreadsheetIdGroupPosts, method='new_sheet', sheetName=email, numRow=1, numCol=5)
-            df = pd.DataFrame(columns=['telegram_id', 'phone', 'time', 'content', 'post', 'profile'])
+            play_with_gsheet(accounts.spreadsheetIdGroupPosts, method='new_sheet', sheetName=email, numRow=1, numCol=7)
+            df = pd.DataFrame(columns=['telegram_id', 'phone', 'time', 'content', 'post', 'profile', 'group'])
             play_with_gsheet(accounts.spreadsheetIdGroupPosts, _range=email, dataframe=df, method='write')
         except: # Existed sheet
             pass
 
         while True:
+            try:
+                if error in ['WebDriverException', 'NoSuchWindowException', 'ProtocolError']:
+                    break
+            except:
+                pass
+
             for groupId in groupIdList:
                 try:
-                    oldPostsDf = play_with_gsheet(spreadsheetIdGroupPosts, 'Sheet1')
-                    newPosts = get_fb_posts(driver, groupId, kwRegex, blacklistKwRegex)
+                    oldPostsDf = play_with_gsheet(accounts.spreadsheetIdGroupPosts, email)
+                    newPosts = get_fb_posts(driver, teleId, groupId.strip(), kwRegex, blacklistKwRegex)
                     newPosts = newPosts[(~newPosts.post.isin(oldPostsDf.post)) & (~newPosts.content.isin(oldPostsDf.content))]
                     if len(newPosts) > 0:
                         play_with_gsheet(accounts.spreadsheetIdGroupPosts, _range=email, dataframe=newPosts, method='append')
                         push_tele(teleId, 'groups', df=newPosts)
+
                 except Exception as err:
+                    error = type(err).__name__
                     if type(err).__name__ in ['WebDriverException', 'NoSuchWindowException', 'ProtocolError']:
                         statusBar['text'] = 'Scrape Ended'
                         endCrawlDf = pd.DataFrame({'session_id':session_id, 'version':version, 'action':'end_crawl_groups', 'time':datetime.now(), 'email':email,
-                                    'telegram_id':teleId, 'keywords':keywords, 'blacklist_keywords':blacklistKeywords}, index=[0])
+                                    'telegram_id':teleId, 'keywords':keywords, 'blacklist_keywords':blacklistKeywords, 'group_id':[groupIdList]}, index=[0])
                         play_with_gsheet(accounts.spreadsheetIdData, 'Sheet1', endCrawlDf, 'append')
                         break
                     elif type(err).__name__ == 'MaxRetryError':
