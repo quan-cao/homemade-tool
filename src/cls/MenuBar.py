@@ -1,5 +1,5 @@
 import tkinter as tk
-from utils import messages
+from utils.texts import *
 from tkinter import messagebox
 
 class MenuBar(tk.Frame):
@@ -26,10 +26,10 @@ class MenuBar(tk.Frame):
             self.manualWindow.title('Manual')
             manualFrame = tk.Frame(self.manualWindow)
             manualTxt = tk.Text(manualFrame, wrap='word', padx=20, pady=5, spacing1=8, bd=3, bg='#ededed', relief='flat')
-            manualTxt.insert('insert', messages.manualText)
+            manualTxt.insert('insert', manualText)
             manualTxt.configure(state='disabled', font=("Rouge", 10))
             manualTxt.pack(fill='both', expand=True)
             manualFrame.pack(fill='both', expand=True)
 
     def add_about(self):
-        messagebox.showinfo(title='About', message=messages.aboutText)
+        messagebox.showinfo(title='About', message=aboutText)

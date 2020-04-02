@@ -4,9 +4,10 @@ from tkinter import messagebox
 
 import os, sys, threading
 import pandas as pd
-import accounts
+from datetime import datetime
 
-from utils import generate_session_id, play_with_gsheet, check_validation
+import accounts
+from utils import generate_session_id, play_with_gsheet, check_validation, merge_var
 from cls import *
 
 class HomemadeApplication(tk.Tk):
@@ -28,6 +29,7 @@ class HomemadeApplication(tk.Tk):
         keywordsDefault = info[3].strip()
         blacklistKeywordsDefault = info[4].strip()
         chromePath = info[5].strip()
+        userNameDefault = info[12].strip()
     except:
         emailDefault = ''
         passDefault = ''
@@ -35,6 +37,7 @@ class HomemadeApplication(tk.Tk):
         keywordsDefault = ''
         blacklistKeywordsDefault = ''
         chromePath = ''
+        userNameDefault = ''
 
     try:
         emailDefault2 = info[6].strip()
@@ -59,7 +62,7 @@ class HomemadeApplication(tk.Tk):
         statusBarText = 'Old users list not found'
         oldUsersList = []
 
-    version = 'dev_0.2.1'
+    version = '0.2.1'
 
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
@@ -70,6 +73,7 @@ class HomemadeApplication(tk.Tk):
 
         self.session_id = generate_session_id()
 
+        self.userNameVar = tk.StringVar(value=self.userNameDefault)
         self.emailVar = tk.StringVar(value=self.emailDefault)
         self.passVar = tk.StringVar(value=self.passDefault)
         self.teleIdVar = tk.StringVar(value=self.teleIdDefault)
@@ -86,6 +90,8 @@ class HomemadeApplication(tk.Tk):
         self.keywordsVar2 = tk.StringVar(value=self.keywordsDefault2)
         self.blacklistKeywordsVar2 = tk.StringVar(value=self.blacklistKeywordsDefault2)
         self.groupIdListVar = tk.StringVar(value=self.groupIdListDefault)
+
+        self.start_append_gsheet()
 
         menu = MenuBar(self)
         tab_control = ttk.Notebook(self)
@@ -116,21 +122,33 @@ class HomemadeApplication(tk.Tk):
         oldUsersThread = threading.Thread(target=get_old_users, daemon=True, name='get_old_users_thread')
         oldUsersThread.start()
 
+    def start_append_gsheet(self):
+        email = merge_var(self.emailDefault, self.emailDefault2)
+        teleId = merge_var(self.teleIdDefault, self.teleIdDefault2)
+
+        df = pd.DataFrame({'username':self.userNameDefault, 'session_id':self.session_id, 'version':self.version, 'action':'start_app', 'time':datetime.now(),
+        'keywords':self.keywordsDefault, 'blacklist_keywords':self.blacklistKeywordsDefault, 'group_id':self.groupIdListDefault}, index=[0])
+        appendThread = threading.Thread(target=play_with_gsheet, args=(accounts.spreadsheetIdData, 'Sheet1', df, 'append'), daemon=True)
+        appendThread.start()
+
     def get_var(self):
-        varStringList = ['session_id', 'version', 'emailVar', 'emailVar2', 'emailDefault', 'emailDefault2', 'passVar', 'passVar2', 'passDefault', 'passDefault2',
+        varStringList = ['userNameVar', 'session_id', 'version', 'emailVar', 'emailVar2', 'emailDefault', 'emailDefault2', 'passVar', 'passVar2', 'passDefault', 'passDefault2',
             'teleIdVar', 'teleIdVar2', 'teleIdDefault', 'teleIdDefault2', 'rememberMeVar', 'rememberMeVar2', 'keywordsVar', 'keywordsVar2', 
             'keywordsDefault', 'keywordsDefault2', 'blacklistKeywordsVar', 'blacklistKeywordsVar2', 'blacklistKeywordsDefault', 'blacklistKeywordsDefault2',
             'chromePath', 'groupIdListVar', 'groupIdListDefault']
-        varList = [self.session_id, self.version, self.emailVar, self.emailVar2, self.emailDefault, self.emailDefault2, self.passVar, self.passVar2, self.passDefault, self.passDefault2,
-            self.teleIdVar, self.teleIdVar2, self.teleIdDefault, self.teleIdDefault2, self.rememberMeVar, self.rememberMeVar2, self.keywordsVar, self.keywordsVar2,
-            self.keywordsDefault, self.keywordsDefault2, self.blacklistKeywordsVar, self.blacklistKeywordsVar2, self.blacklistKeywordsDefault, self.blacklistKeywordsDefault2,
-            self.chromePath, self.groupIdListVar, self.groupIdListDefault]
+        varList = [self.userNameVar, self.session_id, self.version, self.emailVar, self.emailVar2, self.emailDefault, self.emailDefault2, self.passVar, self.passVar2,
+            self.passDefault, self.passDefault2, self.teleIdVar, self.teleIdVar2, self.teleIdDefault, self.teleIdDefault2, self.rememberMeVar, self.rememberMeVar2,
+            self.keywordsVar, self.keywordsVar2, self.keywordsDefault, self.keywordsDefault2, self.blacklistKeywordsVar, self.blacklistKeywordsVar2,
+            self.blacklistKeywordsDefault, self.blacklistKeywordsDefault2, self.chromePath, self.groupIdListVar, self.groupIdListDefault]
 
         varForDict = zip(varStringList, varList)
 
         dct = {}
         for k, v in varForDict:
             dct.setdefault(k, '')
-            dct[k] = v
+            if k.find('Var') != -1:
+                dct[k] = v.get()
+            else:
+                dct[k] = v
 
         return dct

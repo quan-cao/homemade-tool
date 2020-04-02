@@ -1,5 +1,6 @@
 # Ver. 0.2.1
 - Change paradigm to OOP.
+- Add Username field.
 
 # Ver. 0.2.0
 - Add feature crawl groups.

@@ -5,33 +5,33 @@ import accounts
 from utils import play_with_gsheet
 
 def quit_action(dct):
+    userName = dct['userNameVar']
     session_id = dct['session_id']
     version = dct['version']
-    email = dct['emailVar'].get()
-    email2 = dct['emailVar2'].get()
+    email = dct['emailVar']
+    email2 = dct['emailVar2']
     emailDefault = dct['emailDefault']
     emailDefault2 = dct['emailDefault2']
-    password = dct['passVar'].get()
-    password2 = dct['passVar2'].get()
+    password = dct['passVar']
+    password2 = dct['passVar2']
     passDefault = dct['passDefault']
     passDefault2 = dct['passDefault2']
-    teleId = dct['teleIdVar'].get()
-    teleId2 = dct['teleIdVar2'].get()
+    teleId = dct['teleIdVar']
+    teleId2 = dct['teleIdVar2']
     teleIdDefault = dct['teleIdDefault']
     teleIdDefault2 = dct['teleIdDefault2']
-    rememberMe = dct['rememberMeVar'].get()
-    rememberMe2 = dct['rememberMeVar2'].get()
-    keywords = dct['keywordsVar'].get()
-    keywords2 = dct['keywordsVar2'].get()
-    blacklistKeywords = dct['blacklistKeywordsVar'].get()
-    blacklistKeywords2 = dct['blacklistKeywordsVar2'].get()
-    groupIdList = dct['groupIdListVar'].get()
+    rememberMe = dct['rememberMeVar']
+    rememberMe2 = dct['rememberMeVar2']
+    keywords = dct['keywordsVar']
+    keywords2 = dct['keywordsVar2']
+    blacklistKeywords = dct['blacklistKeywordsVar']
+    blacklistKeywords2 = dct['blacklistKeywordsVar2']
+    groupIdList = dct['groupIdListVar']
     chromePath = dct['chromePath']
 
     if dct['session_id'] != '':
-        closeAppDf = pd.DataFrame({'session_id':session_id, 'version':version, 'action':'close_app', 'time':datetime.now(),
-        'email':[[email, email2]] if email != email2 and email2 != '' else email, 'teleId':[[teleId, teleId2]] if teleId != teleId2 and teleId2 != '' else teleId,
-        'keywords':'', 'blacklist_keywords':'', 'group_id':groupIdList}, index=[0])
+        closeAppDf = pd.DataFrame({'username':userName, 'session_id':session_id, 'version':version, 'action':'close_app',
+            'time':datetime.now(), 'keywords':'', 'blacklist_keywords':'', 'group_id':groupIdList}, index=[0])
         play_with_gsheet(accounts.spreadsheetIdData, 'Sheet1', closeAppDf, 'append')
 
     with open('info.txt', 'w', encoding='utf-8') as f:
@@ -46,4 +46,5 @@ def quit_action(dct):
 {teleId2 if rememberMe2 == 1 else teleIdDefault2}
 {keywords2}
 {blacklistKeywords2}
-{groupIdList}""")
+{groupIdList}
+{userName}""")

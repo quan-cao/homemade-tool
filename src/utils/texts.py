@@ -16,6 +16,7 @@ manualText = """In order to use this tool, PLEASE FOLLOW THESE STEPS:
 - Step 4: Log in Telegram, start conversation with @quanvc_pabot.
 
 - Step 5: Run Homemade-tool.exe and fill needed information:
+    + "Username": Each username will have a personal storage, which helps remove duplicated ads posts.
     + "Email" and "Password": Your Facebook account;
     + Telegram User ID: New found ads will be sent to this UserID on Telegram.
         You can start conversation with @chatIDrobot on Telegram to get your User ID.
