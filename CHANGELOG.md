@@ -1,6 +1,7 @@
 # Ver. 0.2.1
 - Change paradigm to OOP.
 - Add Username field.
+- Fix not filter out old users while scrape groups.
 
 # Ver. 0.2.0
 - Add feature crawl groups.
