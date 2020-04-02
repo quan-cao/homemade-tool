@@ -111,7 +111,7 @@ def scrape_groups(userNameVar, groupIdListVar, version, statusBar, chromePath, s
         play_with_gsheet(accounts.spreadsheetIdData, 'Sheet1', beginCrawlDf, 'append')
 
         try:
-            play_with_gsheet(accounts.spreadsheetIdGroupPosts, method='new_sheet', sheetName=userName, numRow=1, numCol=7)
+            play_with_gsheet(accounts.spreadsheetIdGroupPosts, method='new_sheet', sheetName=userName, numRow=1, numCol=6)
             df = pd.DataFrame(columns=['phone', 'time', 'content', 'post', 'profile', 'group'])
             play_with_gsheet(accounts.spreadsheetIdGroupPosts, _range=userName, dataframe=df, method='write')
         except: # Existed sheet
