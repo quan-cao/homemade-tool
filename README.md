@@ -10,3 +10,5 @@ Currently, this tool will allow staffs to enter their Facebook account, set up t
 > 4. Google Spreadsheet API
 > 5. Telegram API
 > 6. Tkinter
+
+*Look for later version in other branches*
