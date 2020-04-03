@@ -13,7 +13,7 @@ from cls import *
 class HomemadeApplication(tk.Tk):
     if not os.path.exists('info.txt'):
         with open('info.txt', 'w', encoding='utf-8') as f:
-            f.write('\n'*11)
+            f.write('\n'*12)
         with open('info.txt', 'r', encoding='utf-8') as f:
             info = f.read()
             info = info.split('\n')
@@ -22,37 +22,19 @@ class HomemadeApplication(tk.Tk):
             info = f.read()
             info = info.split('\n')
 
-    try:
-        emailDefault = info[0].strip()
-        passDefault = info[1].strip()
-        teleIdDefault = info[2].strip()
-        keywordsDefault = info[3].strip()
-        blacklistKeywordsDefault = info[4].strip()
-        chromePath = info[5].strip()
-        userNameDefault = info[12].strip()
-    except:
-        emailDefault = ''
-        passDefault = ''
-        teleIdDefault = ''
-        keywordsDefault = ''
-        blacklistKeywordsDefault = ''
-        chromePath = ''
-        userNameDefault = ''
-
-    try:
-        emailDefault2 = info[6].strip()
-        passDefault2 = info[7].strip()
-        teleIdDefault2 = info[8].strip()
-        keywordsDefault2 = info[9].strip()
-        blacklistKeywordsDefault2 = info[10].strip()
-        groupIdListDefault = info[11].strip()
-    except:
-        emailDefault2 = ''
-        passDefault2 = ''
-        teleIdDefault2 = ''
-        keywordsDefault2 = ''
-        blacklistKeywordsDefault2 = ''
-        groupIdListDefault = ''
+    emailDefault = info[0].strip()
+    passDefault = info[1].strip()
+    teleIdDefault = info[2].strip()
+    keywordsDefault = info[3].strip()
+    blacklistKeywordsDefault = info[4].strip()
+    chromePath = info[5].strip()
+    userNameDefault = info[12].strip()
+    emailDefault2 = info[6].strip()
+    passDefault2 = info[7].strip()
+    teleIdDefault2 = info[8].strip()
+    keywordsDefault2 = info[9].strip()
+    blacklistKeywordsDefault2 = info[10].strip()
+    groupIdListDefault = info[11].strip()
 
     if os.path.exists('oldUsersList.csv'):
         oldUsersList = pd.read_csv('oldUsersList.csv', dtype={'id':str})
@@ -62,7 +44,7 @@ class HomemadeApplication(tk.Tk):
         statusBarText = 'Old users list not found'
         oldUsersList = []
 
-    version = '0.2.1'
+    version = 'dev_0.2.2'
 
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
