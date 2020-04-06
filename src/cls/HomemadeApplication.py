@@ -44,7 +44,7 @@ class HomemadeApplication(tk.Tk):
         statusBarText = 'Old users list not found'
         oldUsersList = []
 
-    version = 'dev_0.2.2'
+    version = '0.2.2'
 
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)

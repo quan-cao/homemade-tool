@@ -22,7 +22,7 @@ class MenuBar(tk.Frame):
 
         extractMenu.add_command(label='Extract data', command=self.addExtractDataWindow)
 
-        parent.config(menu=menu)
+        self.parent.config(menu=menu)
 
     def add_manual(self):
         try:
@@ -47,4 +47,6 @@ class MenuBar(tk.Frame):
                 self.w.focus()
         except:
             self.w = tk.Toplevel(self.parent)
-            windows = ExtractDataWindow(self.w)
+            self.w.title('Extract Data')
+            self.w.resizable(0,0)
+            windows = ExtractDataWindow(self.w, self.parent)
