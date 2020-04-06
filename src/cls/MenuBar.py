@@ -43,10 +43,10 @@ class MenuBar(tk.Frame):
 
     def addExtractDataWindow(self):
         try:
-            if self.w.state() == 'normal':
-                self.w.focus()
+            if self.popUpExtract.state() == 'normal':
+                self.popUpExtract.focus()
         except:
-            self.w = tk.Toplevel(self.parent)
-            self.w.title('Extract Data')
-            self.w.resizable(0,0)
-            windows = ExtractDataWindow(self.w, self.parent)
+            self.popUpExtract = tk.Toplevel(self.parent)
+            self.popUpExtract.title('Extract Data')
+            self.popUpExtract.resizable(0,0)
+            windows = ExtractDataWindow(self.popUpExtract, self.parent)

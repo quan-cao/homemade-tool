@@ -32,36 +32,39 @@ def get_fb_posts(driver, teleId, groupId, kwRegex, blacklistKwRegex, oldUsersLis
             except: pass
 
             content = p.find_element_by_class_name('userContent').text
+            if content == '':
+                break
+            else:
 
-            if len(re.findall(kwRegex, content, re.IGNORECASE)) != 0 and not re.findall(blacklistKwRegex, content, re.IGNORECASE):
-                try:
-                    profile = p.find_element_by_class_name('profileLink').get_attribute('href')
-                except:
-                    profile = p.find_element_by_link_text(p.find_element_by_class_name('_7tae').text).get_attribute('href')
-                if profile.find('profile.php') == -1:
-                    profile = profile.split('?')[0]
-                else:
-                    profile = profile.split('&')[0]
-
-                try:
-                    phone = re.search(r'([^0-9]+(0|84|\+84)[-.\s]?\d{1,3}[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4})', content).group()
-                    phone = re.sub(r'\D+', '', phone)
-                    phone = re.sub(r'^0', '84', phone)
-                except:
-                    phone = None
-                if phone in oldUsersList:
-                    break
-                else:
+                if len(re.findall(kwRegex, content, re.IGNORECASE)) != 0 and not re.findall(blacklistKwRegex, content, re.IGNORECASE):
                     try:
-                        post = p.find_element_by_class_name('_5pcq').get_attribute('href')
+                        profile = p.find_element_by_class_name('profileLink').get_attribute('href')
                     except:
+                        profile = p.find_element_by_link_text(p.find_element_by_class_name('_7tae').text).get_attribute('href')
+                    if profile.find('profile.php') == -1:
+                        profile = profile.split('?')[0]
+                    else:
+                        profile = profile.split('&')[0]
+
+                    try:
+                        phone = re.search(r'([^0-9]+(0|84|\+84)[-.\s]?\d{1,3}[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4})', content).group()
+                        phone = re.sub(r'\D+', '', phone)
+                        phone = re.sub(r'^0', '84', phone)
+                    except:
+                        phone = None
+                    if phone in oldUsersList:
                         break
+                    else:
+                        try:
+                            post = p.find_element_by_class_name('_5pcq').get_attribute('href')
+                        except:
+                            break
 
-                    post_time = pd.to_datetime(p.find_element_by_class_name('_5ptz').get_attribute('data-utime'), unit='s') + pd.DateOffset(hour=16)
+                        post_time = pd.to_datetime(p.find_element_by_class_name('_5ptz').get_attribute('data-utime'), unit='s') + pd.DateOffset(hour=16)
 
-                    dataframe = dataframe.append({'phone':phone, 'time':post_time, 'content':content,
-                                                'post':post, 'profile':profile, 'group':groupId}, ignore_index=True)
-            else: continue
+                        dataframe = dataframe.append({'phone':phone, 'time':post_time, 'content':content,
+                                                    'post':post, 'profile':profile, 'group':groupId}, ignore_index=True)
+                else: continue
     dataframe = dataframe.drop_duplicates(subset='post')
     dataframe = dataframe.drop_duplicates(subset='content')
     return dataframe

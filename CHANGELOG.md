@@ -1,3 +1,6 @@
+# Ver. 0.2.2
+- Add feature extracting historical data.
+
 # Ver. 0.2.1
 - Change paradigm to OOP.
 - Add Username field.

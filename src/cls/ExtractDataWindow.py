@@ -55,7 +55,7 @@ class ExtractDataWindow(tk.Frame):
 
     def extract_ads_posts(self, fileName):
         if not fileName:
-            messagebox.showinfo(title='About', message='Please fill file name.')
+            messagebox.showinfo(title='Missing Information', message='Please fill file name.')
         else:
             self.controller.statusBar['text'] = 'Extracting Ads Data...'
             extractDf = play_with_gsheet(accounts.spreadsheetIdAdsPosts, self.userNameEntry.get())
@@ -66,7 +66,7 @@ class ExtractDataWindow(tk.Frame):
 
     def extract_groups_posts(self, fileName):
         if not fileName:
-            messagebox.showinfo(title='About', message='Please fill file name.')
+            messagebox.showinfo(title='Missing Information', message='Please fill file name.')
         else:
             self.controller.statusBar['text'] = 'Extracting Groups data...'
             extractDf = play_with_gsheet(accounts.spreadsheetIdGroupPosts, self.userNameEntry.get())
