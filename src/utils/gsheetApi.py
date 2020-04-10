@@ -1,14 +1,14 @@
 import pandas as pd
-import pickle, os, sys
+import pickle, os, sys, requests
+
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
-from utils.resourcePath import resource_path
 
-import requests
+from utils import resource_path
 
 def gsheet_build_service(token_refresh=True):
-    tokenPath = resource_path('token.pickle')
+    tokenPath = resource_path(r'src\token.pickle')
     with open(tokenPath, 'rb') as token:
         credentials = pickle.load(token)
     if not credentials or not credentials.valid:

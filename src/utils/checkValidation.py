@@ -1,8 +1,8 @@
-from utils.gsheetApi import play_with_gsheet
+from utils import play_with_gsheet
 from tkinter import messagebox
 import accounts
 
-def check_validation(master, type, version=None, email=None, teleId=None):
+def check_validation(type, version=None, email=None, teleId=None):
     try:
         checkVersionDf = play_with_gsheet(accounts.spreadsheetIdInfo, 'Sheet1')
     except:
@@ -16,11 +16,11 @@ def check_validation(master, type, version=None, email=None, teleId=None):
     else:
         if type == 'version':
             if checkDf.active.iloc[0] == 'FALSE':
-                if checkDf.message.iloc[0] == 'deprecated':
-                    messagebox.showerror(title='Version Deprecated', message='This version has been deprecated.\nPlease download the latest version.')
-                    quit()
-                elif checkDf.message.iloc[0] == 'maintain':
+                if checkDf.message.iloc[0] == 'maintain':
                     messagebox.showerror(title='Maintain', message='The app is under maintainance. Please try again later.')
+                    quit()
+                else:
+                    messagebox.showerror(title='Version Deprecated', message='This version has been deprecated.\nPlease download the latest version.')
                     quit()
 
         elif type == 'user':
