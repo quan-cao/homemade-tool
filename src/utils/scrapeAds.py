@@ -5,7 +5,7 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 
-from utils import push_tele, get_regex, play_with_gsheet, check_validation, resource_path
+from utils import push_tele, get_regex, play_with_gsheet, check_validation
 
 import pandas as pd
 import accounts
@@ -20,16 +20,26 @@ def log_in_facebook(driver, email, password):
     time.sleep(1)
     driver.switch_to.active_element.send_keys(Keys.RETURN)
 
-def scrape_ads(userNameVar, version, statusBar, chromePath, session_id, keywordsVar, blacklistKeywordsVar, emailVar, passVar, teleIdVar, oldUsersList):
+def scrape_ads(app):
 
-    if not userNameVar.get():
-        statusBar['text'] = 'Please fill Username'
-    elif (not emailVar.get()) or (not passVar.get()):
-        statusBar['text'] = 'Please fill Facebook account'
+    if not app.userNameVar.get():
+        app.statusBar['text'] = 'Please fill Username'
+    elif (not app.emailVar.get()) or (not app.passVar.get()):
+        app.statusBar['text'] = 'Please fill Facebook account'
     else:
-        check_validation('user', version, emailVar.get(), teleIdVar.get())
+        check_validation('user', app.version, app.emailVar.get(), app.teleIdVar.get())
+        app.statusBar['text'] = 'Scraping for Ads...'
 
-        statusBar['text'] = 'Scraping for Ads...'
+        # Get keywords
+        kwRegex = get_regex(app.keywordsVar.get())
+        blacklistKwRegex = get_regex(app.blacklistKeywordsVar.get(), blacklist=True)
+
+        userName = app.userNameVar.get()
+        email = app.emailVar.get()
+        password = app.passVar.get()
+        teleId = app.teleIdVar.get()
+        keywords = app.keywordsVar.get()
+        blacklistKeywords = app.blacklistKeywordsVar.get()
 
         options = webdriver.ChromeOptions()
         options.add_argument("--disable-notifications")
@@ -42,24 +52,14 @@ def scrape_ads(userNameVar, version, statusBar, chromePath, session_id, keywords
         options.add_argument('--log-level=OFF')
         # options.add_argument('--headless')
         try:
-            driver = webdriver.Chrome(executable_path=resource_path(chromePath), options=options)
+            driver = webdriver.Chrome(executable_path=app.chromePath, options=options)
+            # driver = webdriver.Edge(app.chromePath)
+            log_in_facebook(driver, email, password)
         except Exception:
-            statusBar['text'] = 'Chromedriver not found'
-        
-        # Get keywords
-        kwRegex = get_regex(keywordsVar.get())
-        blacklistKwRegex = get_regex(blacklistKeywordsVar.get(), blacklist=True)
+            app.statusBar['text'] = 'Chromedriver not found'
+            return False
 
-        userName = userNameVar.get()
-        email = emailVar.get()
-        password = passVar.get()
-        teleId = teleIdVar.get()
-        keywords = keywordsVar.get()
-        blacklistKeywords = blacklistKeywordsVar.get()
-
-        log_in_facebook(driver, email, password)
-
-        beginCrawlDf = pd.DataFrame({'username':userName, 'session_id':session_id, 'version':version, 'action':'begin_crawl_ads', 'time':datetime.now(),
+        beginCrawlDf = pd.DataFrame({'username':userName, 'session_id':app.session_id, 'version':app.version, 'action':'begin_crawl_ads', 'time':datetime.now(),
             'keywords':keywords, 'blacklist_keywords':blacklistKeywords}, index=[0])
         play_with_gsheet(accounts.spreadsheetIdData, 'Sheet1', beginCrawlDf, 'append')
 
@@ -72,7 +72,7 @@ def scrape_ads(userNameVar, version, statusBar, chromePath, session_id, keywords
             oldPostsDf = play_with_gsheet(accounts.spreadsheetIdAdsPosts, _range=userName)
             oldPage = oldPostsDf.page.tolist()
             pageSet = set(oldPage)
-        # Scrape
+
         while True:
             try:
                 while len(driver.window_handles) > 1:
@@ -94,9 +94,9 @@ def scrape_ads(userNameVar, version, statusBar, chromePath, session_id, keywords
                                             page = e.find_element_by_link_text(e.find_element_by_class_name('_7tae').text).get_attribute('href').split('/')[3]
                                         except:
                                             if e.find_element_by_class_name('_7tae').text.find('like') != -1:
-                                                page = e.find_element_by_link_text(re.sub('\.$', '', e.find_element_by_class_name('_7tae').text.split(' like ')[1])).get_attribute('href').split('/')[3]
+                                                page = e.find_element_by_link_text(re.sub(r'\.$', '', e.find_element_by_class_name('_7tae').text.split(' like ')[1])).get_attribute('href').split('/')[3]
                                             elif e.find_element_by_class_name('_7tae').text.find('thích') != -1:
-                                                page = e.find_element_by_link_text(re.sub('\.$', '', e.find_element_by_class_name('_7tae').text.split(' thích ')[1])).get_attribute('href').split('/')[3]
+                                                page = e.find_element_by_link_text(re.sub(r'\.$', '', e.find_element_by_class_name('_7tae').text.split(' thích ')[1])).get_attribute('href').split('/')[3]
                                     if page not in pageSet:
                                         # Get page info
                                         driver.execute_script(f"window.open('{'https://www.facebook.com/' + page + '/about?ref=page_internal'}');")
@@ -118,7 +118,7 @@ def scrape_ads(userNameVar, version, statusBar, chromePath, session_id, keywords
                                                     phones.append(phone)
                                             checkPhone = 0
                                             for p in phones:
-                                                if p in oldUsersList:
+                                                if p in app.oldUsersList:
                                                     checkPhone += 1
                                                     pageSet.add(page)
                                                     break
@@ -136,9 +136,9 @@ def scrape_ads(userNameVar, version, statusBar, chromePath, session_id, keywords
                                         driver.close()
                                         driver.switch_to.window(driver.window_handles[0])
             except Exception as err:
-                if type(err).__name__ in ['WebDriverException', 'NoSuchWindowException', 'ProtocolError']:
-                    statusBar['text'] = 'Scrape Ended'
-                    endCrawlDf = pd.DataFrame({'username':userName, 'session_id':session_id, 'version':version, 'action':'end_crawl_ads', 'time':datetime.now(),
+                if type(err).__name__ in ['WebDriverException', 'NoSuchWindowException', 'ProtocolError', 'UnboundLocalError']:
+                    app.statusBar['text'] = 'Scrape Ended'
+                    endCrawlDf = pd.DataFrame({'username':userName, 'session_id':app.session_id, 'version':app.version, 'action':'end_crawl_ads', 'time':datetime.now(),
                         'keywords':keywords, 'blacklist_keywords':blacklistKeywords}, index=[0])
                     play_with_gsheet(accounts.spreadsheetIdData, 'Sheet1', endCrawlDf, 'append')
                     break
@@ -146,11 +146,11 @@ def scrape_ads(userNameVar, version, statusBar, chromePath, session_id, keywords
                     try:
                         driver.quit()
                     except:
-                        driver = webdriver.Chrome(executable_path=chromePath, options=options)
+                        driver = webdriver.Chrome(executable_path=app.chromePath, options=options)
                         log_in_facebook(driver, email, password)
                         continue
                 else:
-                    err_text = f"Error: {type(err).__name__}.\n{str(err)}\nFrom {email} at session <b>{session_id}</b>"
+                    err_text = f"Error: {type(err).__name__}.\n{str(err)}\nFrom {email} at session <b>{app.session_id}</b>"
                     data = {
                         'chat_id': '807358017',
                         'text': err_text,

@@ -83,7 +83,5 @@ class AdsPostsWindow(tk.Frame):
         lowerFrame.pack()
 
     def start_scrape_ads_thread(self):
-        scrapeAdsThread = threading.Thread(target=scrape_ads, args=(self.controller.userNameVar, self.controller.version, self.controller.statusBar, self.controller.chromePath,
-                                        self.controller.session_id, self.controller.keywordsVar, self.controller.blacklistKeywordsVar, self.controller.emailVar,
-                                        self.controller.passVar, self.controller.teleIdVar, self.controller.oldUsersList,), daemon=True, name='scraping_ads_thread')
+        scrapeAdsThread = threading.Thread(target=scrape_ads, args=(self.controller,), daemon=True, name='scraping_ads_thread')
         scrapeAdsThread.start()

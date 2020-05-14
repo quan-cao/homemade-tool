@@ -1,5 +1,5 @@
 import pandas as pd
-import pickle, os, sys, requests
+import pickle, os, sys, requests, logging
 
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -36,18 +36,21 @@ def play_with_gsheet(spreadsheetId=None, _range=None, dataframe=None, method='re
     if method == 'write':
         values = [dataframe.columns.values.astype(str).tolist()] + dataframe.astype(str).values.tolist()
         data = [
-        {
-            'range': _range,
-            'values': values
-        }
+            {
+                'range': _range,
+                'values': values
+            }
         ]
         body = {
             'valueInputOption':'RAW',
             'data':data
         }
         
-        service.spreadsheets().values().batchUpdate(spreadsheetId=spreadsheetId, body=body).execute()
-            
+        try:
+            service.spreadsheets().values().batchUpdate(spreadsheetId=spreadsheetId, body=body).execute()
+        except:
+            logging.error('Write error !')
+
     if method == 'clear':
         body = {
             'ranges':_range
@@ -60,9 +63,12 @@ def play_with_gsheet(spreadsheetId=None, _range=None, dataframe=None, method='re
             'values': dataframe.astype(str).values.tolist()
         }
         
-        service.spreadsheets().values().append(spreadsheetId=spreadsheetId, range=_range,
+        try:
+            service.spreadsheets().values().append(spreadsheetId=spreadsheetId, range=_range,
                                                         valueInputOption='RAW', insertDataOption='INSERT_ROWS',
                                                         body=body).execute()
+        except:
+            logging.error('Append error !')
 
     if method == 'new_sheet':
         body = {

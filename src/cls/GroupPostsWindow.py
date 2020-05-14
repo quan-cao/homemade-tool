@@ -24,14 +24,14 @@ class GroupPostsWindow(tk.Frame):
         userNameLabel.grid(row=1, sticky='E')
 
         # Email Row
-        emailLabel = tk.Label(topFrame, text='Email')
+        emailLabel = tk.Label(topFrame, text='Facebook Email/Phone')
         emailLabel.grid(row=2, sticky='E')
 
         emailEntry = tk.Entry(topFrame, textvariable=controller.emailVar2)
         emailEntry.grid(row=2, column=1, ipadx=15, padx=5)
 
         # Password Row
-        passLabel = tk.Label(topFrame, text='Password')
+        passLabel = tk.Label(topFrame, text='Facebook Password')
         passLabel.grid(row=3, sticky='E')
 
         passEntry = tk.Entry(topFrame, textvariable=controller.passVar2, show='*')
@@ -90,8 +90,6 @@ class GroupPostsWindow(tk.Frame):
         lowerFrame.pack()
 
     def start_scrape_groups_thread(self):
-        scrapeGroupsThread = threading.Thread(target=scrape_groups, args=(self.controller.userNameVar, self.controller.groupIdListVar, self.controller.version, self.controller.statusBar,
-                                        self.controller.chromePath, self.controller.session_id, self.controller.keywordsVar2, self.controller.blacklistKeywordsVar2,
-                                        self.controller.emailVar2, self.controller.passVar2, self.controller.teleIdVar2, self.controller.oldUsersList,),
+        scrapeGroupsThread = threading.Thread(target=scrape_groups, args=(self.controller,),
                                         daemon=True, name='scraping_groups_thread')
         scrapeGroupsThread.start()

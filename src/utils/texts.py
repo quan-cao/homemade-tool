@@ -49,7 +49,7 @@ KEEP IN MIND
 ## End Manual Text
 
 ## About Text
-aboutText = """Homemade-tool will automatically scroll your Facebook newsfeed and get information of merchants from ads posts.
+aboutText = """Homemade-tool will automatically scroll your Facebook newsfeed and get information of merchants from ads posts or group posts.
 
 This tool is made for AhaMove's direct sales. Please DO NOT share to others.
 

@@ -1,3 +1,6 @@
+# Ver. 0.2.3
+- Fix not filter old users in some cases.
+
 # Ver. 0.2.2
 - Add feature extracting historical data.
 

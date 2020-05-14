@@ -2,6 +2,9 @@ from utils import play_with_gsheet
 from tkinter import messagebox
 import accounts
 
+def quit():
+    quit()
+
 def check_validation(type, version=None, email=None, teleId=None):
     try:
         checkVersionDf = play_with_gsheet(accounts.spreadsheetIdInfo, 'Sheet1')
@@ -25,6 +28,6 @@ def check_validation(type, version=None, email=None, teleId=None):
 
         elif type == 'user':
             checkDf = checkDf.fillna('')
-            if (email in checkDf.blacklist_email.iloc[0].split(',')) or (teleId in checkDf.blacklist_tele.iloc[0].split(',')):
+            if (email in checkDf.blacklist_email.iloc[0].split(',')):
                 messagebox.showerror(title='Error', message='Something\'s wrong.\nPlease contact dev for more information.')
                 quit()

@@ -1,53 +1,39 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import filedialog
 
-import os, sys, threading
+import os, sys, threading, pickle
 import pandas as pd
 from datetime import datetime
 
 import accounts
-from utils import generate_session_id, play_with_gsheet, check_validation, merge_var
+from utils import generate_session_id, play_with_gsheet, check_validation
 from cls import *
 
 class HomemadeApplication(tk.Tk):
-    if not os.path.exists('info.txt'):
-        with open('info.txt', 'w', encoding='utf-8') as f:
-            f.write('\n'*12)
-        with open('info.txt', 'r', encoding='utf-8') as f:
-            info = f.read()
-            info = info.split('\n')
-    else:
-        with open('info.txt', 'r', encoding='utf-8') as f:
-            info = f.read()
-            info = info.split('\n')
 
-    emailDefault = info[0].strip()
-    passDefault = info[1].strip()
-    teleIdDefault = info[2].strip()
-    keywordsDefault = info[3].strip()
-    blacklistKeywordsDefault = info[4].strip()
-    chromePath = info[5].strip()
-    userNameDefault = info[12].strip()
-    emailDefault2 = info[6].strip()
-    passDefault2 = info[7].strip()
-    teleIdDefault2 = info[8].strip()
-    keywordsDefault2 = info[9].strip()
-    blacklistKeywordsDefault2 = info[10].strip()
-    groupIdListDefault = info[11].strip()
-
-    if os.path.exists('oldUsersList.csv'):
-        oldUsersList = pd.read_csv('oldUsersList.csv', dtype={'id':str})
-        oldUsersList = oldUsersList.id.tolist()
-        statusBarText = 'Status Bar is cool'
-    else:
-        statusBarText = 'Old users list not found'
-        oldUsersList = []
-
-    version = '0.2.2'
+    columns = ['email', 'password', 'teleId', 'keywords', 'blacklistKeywords', 'userName', 'chromePath',
+                    'email2', 'password2', 'teleId2', 'keywords2', 'blacklistKeywords2', 'groupId']
+    version = '0.2.3'
 
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
+
+        try:
+            with open('info', 'rb') as f:
+                default = pickle.load(f)
+                self.default = default.iloc[0]
+        except:
+            self.default = pd.DataFrame([(','*12).split(',')], columns=self.columns).iloc[0]
+
+        if os.path.exists('oldUsersList.csv'):
+            oldUsersList = pd.read_csv('oldUsersList.csv', dtype={'id':str})
+            self.oldUsersList = oldUsersList.id.tolist()
+            self.statusBarText = 'Status Bar is cool'
+        else:
+            self.statusBarText = 'Old users list not found'
+            self.oldUsersList = []
 
         self.title("Homemade tool")
         self.resizable(0,0)
@@ -55,25 +41,25 @@ class HomemadeApplication(tk.Tk):
 
         self.session_id = generate_session_id()
 
-        self.userNameVar = tk.StringVar(value=self.userNameDefault)
-        self.emailVar = tk.StringVar(value=self.emailDefault)
-        self.passVar = tk.StringVar(value=self.passDefault)
-        self.teleIdVar = tk.StringVar(value=self.teleIdDefault)
+        self.userNameVar = tk.StringVar(value=self.default.userName)
+        self.emailVar = tk.StringVar(value=self.default.email)
+        self.passVar = tk.StringVar(value=self.default.password)
+        self.teleIdVar = tk.StringVar(value=self.default.teleId)
         self.rememberMeVar = tk.IntVar()
         self.rememberMeVar.set(1)
-        self.keywordsVar = tk.StringVar(value=self.keywordsDefault)
-        self.blacklistKeywordsVar = tk.StringVar(value=self.blacklistKeywordsDefault)
+        self.keywordsVar = tk.StringVar(value=self.default.keywords)
+        self.blacklistKeywordsVar = tk.StringVar(value=self.default.blacklistKeywords)
 
-        self.emailVar2 = tk.StringVar(value=self.emailDefault2)
-        self.passVar2 = tk.StringVar(value=self.passDefault2)
-        self.teleIdVar2 = tk.StringVar(value=self.teleIdDefault2)
+        self.emailVar2 = tk.StringVar(value=self.default.email2)
+        self.passVar2 = tk.StringVar(value=self.default.password2)
+        self.teleIdVar2 = tk.StringVar(value=self.default.teleId2)
         self.rememberMeVar2 = tk.IntVar()
         self.rememberMeVar2.set(1)
-        self.keywordsVar2 = tk.StringVar(value=self.keywordsDefault2)
-        self.blacklistKeywordsVar2 = tk.StringVar(value=self.blacklistKeywordsDefault2)
-        self.groupIdListVar = tk.StringVar(value=self.groupIdListDefault)
+        self.keywordsVar2 = tk.StringVar(value=self.default.keywords2)
+        self.blacklistKeywordsVar2 = tk.StringVar(value=self.default.blacklistKeywords2)
+        self.groupIdListVar = tk.StringVar(value=self.default.groupId)
 
-        self.start_append_gsheet()
+        self.chromePath = self.default.chromePath
 
         menu = MenuBar(self)
         tab_control = ttk.Notebook(self)
@@ -86,51 +72,40 @@ class HomemadeApplication(tk.Tk):
         self.statusBar = tk.Label(self, text=self.statusBarText, bd=1, relief='sunken', anchor='w')
         self.statusBar.pack(side='bottom', fill='x')
 
+
     def chrome_path(self):
-        from tkinter import filedialog
         self.statusBar['text'] = 'Browsing to chromedriver.exe'
         self.chromePath = filedialog.askopenfilename(initialdir='/', title='Select File', filetypes=(('Executables', '*.exe'), ('All files', '*.*')))
         self.statusBar['text'] = self.statusBarText
+
 
     def start_get_old_users_thread(self):
         def get_old_users():
             self.statusBar['text'] = 'Getting old users...'
             dfOldUsers = play_with_gsheet(accounts.spreadsheetIdHubspot, 'Sheet1')
             dfOldUsers['id'] = dfOldUsers.id.astype(str)
-            self.oldUsersList = dfOldUsers.id
-            self.oldUsersList.to_csv('oldUsersList.csv', index=False)
-            self.statusBarText = 'Old users updated.' 
-            self.statusBar['text'] = self.statusBarText
+            dfOldUsers.to_csv('oldUsersList.csv', index=False)
+            self.oldUsersList = dfOldUsers.id.tolist()
+            self.statusBar['text'] = 'Old users updated.'
+
         oldUsersThread = threading.Thread(target=get_old_users, daemon=True, name='get_old_users_thread')
         oldUsersThread.start()
 
-    def start_append_gsheet(self):
-        email = merge_var(self.emailDefault, self.emailDefault2)
-        teleId = merge_var(self.teleIdDefault, self.teleIdDefault2)
 
-        df = pd.DataFrame({'username':self.userNameDefault, 'session_id':self.session_id, 'version':self.version, 'action':'start_app', 'time':datetime.now(),
-        'keywords':self.keywordsDefault, 'blacklist_keywords':self.blacklistKeywordsDefault, 'group_id':self.groupIdListDefault}, index=[0])
-        appendThread = threading.Thread(target=play_with_gsheet, args=(accounts.spreadsheetIdData, 'Sheet1', df, 'append'), daemon=True)
-        appendThread.start()
+    def quit(self):
+        info1 = [self.emailVar.get(), self.passVar.get(), self.teleIdVar.get(), self.keywordsVar.get(), self.blacklistKeywordsVar.get(), self.userNameVar.get(), self.chromePath] \
+            if self.rememberMeVar.get() == 1 \
+            else [self.default.email, self.default.password, self.default.teleId, self.default.keywords, self.default.blacklistKeywords, self.default.userName, self.chromePath]
 
-    def get_var(self):
-        varStringList = ['userNameVar', 'session_id', 'version', 'emailVar', 'emailVar2', 'emailDefault', 'emailDefault2', 'passVar', 'passVar2', 'passDefault', 'passDefault2',
-            'teleIdVar', 'teleIdVar2', 'teleIdDefault', 'teleIdDefault2', 'rememberMeVar', 'rememberMeVar2', 'keywordsVar', 'keywordsVar2', 
-            'keywordsDefault', 'keywordsDefault2', 'blacklistKeywordsVar', 'blacklistKeywordsVar2', 'blacklistKeywordsDefault', 'blacklistKeywordsDefault2',
-            'chromePath', 'groupIdListVar', 'groupIdListDefault']
-        varList = [self.userNameVar, self.session_id, self.version, self.emailVar, self.emailVar2, self.emailDefault, self.emailDefault2, self.passVar, self.passVar2,
-            self.passDefault, self.passDefault2, self.teleIdVar, self.teleIdVar2, self.teleIdDefault, self.teleIdDefault2, self.rememberMeVar, self.rememberMeVar2,
-            self.keywordsVar, self.keywordsVar2, self.keywordsDefault, self.keywordsDefault2, self.blacklistKeywordsVar, self.blacklistKeywordsVar2,
-            self.blacklistKeywordsDefault, self.blacklistKeywordsDefault2, self.chromePath, self.groupIdListVar, self.groupIdListDefault]
+        info2 = [self.emailVar2.get(), self.passVar2.get(), self.teleIdVar2.get(), self.keywordsVar2.get(), self.blacklistKeywordsVar2.get(), self.groupIdListVar.get()] \
+            if self.rememberMeVar2.get() == 1 \
+            else [self.default.userName2, self.default.email2, self.default.teleId2, self.default.password2, self.default.keywords2, self.default.blacklistKeywords2, self.default.groupId]
 
-        varForDict = zip(varStringList, varList)
+        saveInfo = pd.DataFrame([info1 + info2], columns=self.columns)
 
-        dct = {}
-        for k, v in varForDict:
-            dct.setdefault(k, '')
-            if k.find('Var') != -1:
-                dct[k] = v.get()
-            else:
-                dct[k] = v
+        with open('info', 'wb') as f:
+            pickle.dump(saveInfo, f)
 
-        return dct
+        df = pd.DataFrame({'username':self.userNameVar.get(), 'session_id':self.session_id, 'version':self.version, 'action':'close_app', 'time':datetime.now(),
+        'keywords':'', 'blacklist_keywords':'', 'group_id':''}, index=[0])
+        play_with_gsheet(accounts.spreadsheetIdData, 'Sheet1', df, 'append')

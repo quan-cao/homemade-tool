@@ -23,7 +23,6 @@ def push_tele(teleId, _type, name=None, facebook=None, phone=None, df=None):
             content = df.iloc[i]['content']
             phone = df.iloc[i]['phone']
             post = df.iloc[i]['post']
-            group = df.iloc[i]['group']
             post_time = df.iloc[i]['time']
 
             text = """

@@ -10,7 +10,7 @@ from utils import push_tele, get_regex, play_with_gsheet, check_validation, reso
 import pandas as pd
 import accounts
 import time, requests, re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def log_in_facebook(driver, email, password):
     driver.get('https://www.facebook.com')
@@ -26,7 +26,10 @@ def get_fb_posts(driver, teleId, groupId, kwRegex, blacklistKwRegex, oldUsersLis
     driver.get(f'https://facebook.com/groups/{groupId}?sorting_setting=CHRONOLOGICAL')
     posts = WebDriverWait(driver, 5).until(EC.presence_of_all_elements_located((By.CLASS_NAME, 'userContentWrapper')))
     for p in posts:
-        if p.text.find('Vừa xong') != -1 or p.text.find('1 phút') != -1:
+        if (p.find_element_by_class_name('_5ptz')
+            .find_element_by_class_name('timestampContent')
+            .text in ['Vừa xong', '1 phút', '2 phút', '3 phút', '4 phút', '5 phút',
+                        'Just now', '1 min', '2 mins', '3 mins', '4 mins', '5 mins']):
             try:
                 p.find_element_by_class_name('see_more_link_inner').click()
             except: pass
@@ -60,24 +63,37 @@ def get_fb_posts(driver, teleId, groupId, kwRegex, blacklistKwRegex, oldUsersLis
                         except:
                             break
 
-                        post_time = pd.to_datetime(p.find_element_by_class_name('_5ptz').get_attribute('data-utime'), unit='s') + pd.DateOffset(hour=16)
+                        post_time = pd.to_datetime(p.find_element_by_class_name('_5ptz').get_attribute('data-utime'), unit='s') + timedelta(hours=7)
 
                         dataframe = dataframe.append({'phone':phone, 'time':post_time, 'content':content,
                                                     'post':post, 'profile':profile, 'group':groupId}, ignore_index=True)
-                else: continue
+                else:
+                    continue
     dataframe = dataframe.drop_duplicates(subset='post')
     dataframe = dataframe.drop_duplicates(subset='content')
     return dataframe
 
-def scrape_groups(userNameVar, groupIdListVar, version, statusBar, chromePath, session_id, keywordsVar, blacklistKeywordsVar, emailVar, passVar, teleIdVar, oldUsersList):
-    if not userNameVar.get():
-        statusBar['text'] = 'Please fill Username'
-    elif (not emailVar.get()) or (not passVar.get()):
-        statusBar['text'] = 'Please fill Facebook account'
+def scrape_groups(app):
+    if not app.userNameVar.get():
+        app.statusBar['text'] = 'Please fill Username'
+    elif (not app.emailVar2.get()) or (not app.passVar2.get()):
+        app.statusBar['text'] = 'Please fill Facebook account'
     else:
-        check_validation('user', version, emailVar.get(), teleIdVar.get())
+        check_validation('user', app.version, app.emailVar2.get(), app.teleIdVar2.get())
+        app.statusBar['text'] = 'Scraping in Groups...'
 
-        statusBar['text'] = 'Scraping in Groups...'
+        # Get keywords
+        kwRegex = get_regex(app.keywordsVar2.get())
+        blacklistKwRegex = get_regex(app.blacklistKeywordsVar2.get(), blacklist=True)
+
+        userName = app.userNameVar.get()
+        email = app.emailVar2.get()
+        password = app.passVar2.get()
+        teleId = app.teleIdVar2.get()
+        keywords = app.keywordsVar2.get()
+        blacklistKeywords = app.blacklistKeywordsVar2.get()
+        groupIdList = app.groupIdListVar.get()
+        groupIdList = groupIdList.split(',')
 
         options = webdriver.ChromeOptions()
         options.add_argument("--disable-notifications")
@@ -90,27 +106,14 @@ def scrape_groups(userNameVar, groupIdListVar, version, statusBar, chromePath, s
         options.add_argument('--log-level=OFF')
         # options.add_argument('--headless')
         try:
-            driver = webdriver.Chrome(executable_path=resource_path(chromePath), options=options)
+            driver = webdriver.Chrome(executable_path=app.chromePath, options=options)
+            # driver = webdriver.Edge(executable_path=app.chromePath)
+            log_in_facebook(driver, email, password)
         except Exception:
-            statusBar['text'] = 'Chromedriver not found'
+            app.statusBar['text'] = 'Chromedriver not found'
         
-        # Get keywords
-        kwRegex = get_regex(keywordsVar.get())
-        blacklistKwRegex = get_regex(blacklistKeywordsVar.get(), blacklist=True)
-
-        userName = userNameVar.get()
-        email = emailVar.get()
-        password = passVar.get()
-        teleId = teleIdVar.get()
-        keywords = keywordsVar.get()
-        blacklistKeywords = blacklistKeywordsVar.get()
-        groupIdList = groupIdListVar.get()
-        groupIdList = groupIdList.split(',')
-
-        log_in_facebook(driver, email, password)
-
-        beginCrawlDf = pd.DataFrame({'username':userName, 'session_id':session_id, 'version':version, 'action':'begin_crawl_groups', 'time':datetime.now(),
-            'keywords':keywords, 'blacklist_keywords':blacklistKeywords, 'group_id': groupIdListVar.get()}, index=[0])
+        beginCrawlDf = pd.DataFrame({'username':userName, 'session_id':app.session_id, 'version':app.version, 'action':'begin_crawl_groups', 'time':datetime.now(),
+            'keywords':keywords, 'blacklist_keywords':blacklistKeywords, 'group_id': app.groupIdListVar.get()}, index=[0])
         play_with_gsheet(accounts.spreadsheetIdData, 'Sheet1', beginCrawlDf, 'append')
 
         try:
@@ -121,42 +124,32 @@ def scrape_groups(userNameVar, groupIdListVar, version, statusBar, chromePath, s
             pass
 
         while True:
-            try:
-                if error in ['WebDriverException', 'NoSuchWindowException', 'ProtocolError']:
-                    break
-            except:
-                pass
-
             for groupId in groupIdList:
                 try:
                     oldPostsDf = play_with_gsheet(accounts.spreadsheetIdGroupPosts, userName)
-                    newPosts = get_fb_posts(driver, teleId, groupId.strip(), kwRegex, blacklistKwRegex, oldUsersList)
+                    newPosts = get_fb_posts(driver, teleId, groupId.strip(), kwRegex, blacklistKwRegex, app.oldUsersList)
                     if len(newPosts) > 0:
                         newPosts = newPosts[(~newPosts.post.isin(oldPostsDf.post)) & (~newPosts.content.isin(oldPostsDf.content))]
                         if len(newPosts) > 0:
                             push_tele(teleId, 'groups', df=newPosts)
-                            try:
-                                play_with_gsheet(accounts.spreadsheetIdGroupPosts, _range=userName, dataframe=newPosts, method='append')
-                            except:
-                                pass
+                            play_with_gsheet(accounts.spreadsheetIdGroupPosts, _range=userName, dataframe=newPosts, method='append')
                         
                 except Exception as err:
-                    error = type(err).__name__
                     if type(err).__name__ in ['WebDriverException', 'NoSuchWindowException', 'ProtocolError']:
-                        statusBar['text'] = 'Scrape Ended'
-                        endCrawlDf = pd.DataFrame({'username':userName, 'session_id':session_id, 'version':version, 'action':'end_crawl_groups', 'time':datetime.now(),
-                            'keywords':keywords, 'blacklist_keywords':blacklistKeywords, 'group_id':groupIdListVar.get()}, index=[0])
+                        app.statusBar['text'] = 'Scrape Ended'
+                        endCrawlDf = pd.DataFrame({'username':userName, 'session_id':app.session_id, 'version':app.version, 'action':'end_crawl_groups', 'time':datetime.now(),
+                            'keywords':keywords, 'blacklist_keywords':blacklistKeywords, 'group_id':app.groupIdListVar.get()}, index=[0])
                         play_with_gsheet(accounts.spreadsheetIdData, 'Sheet1', endCrawlDf, 'append')
                         break
                     elif type(err).__name__ == 'MaxRetryError':
                         try:
                             driver.quit()
                         except:
-                            driver = webdriver.Chrome(executable_path=chromePath, options=options)
+                            driver = webdriver.Chrome(executable_path=app.chromePath, options=options)
                             log_in_facebook(driver, email, password)
                             continue
                     else:
-                        err_text = f"Error: {type(err).__name__}.\n{str(err)}\nFrom {email} at session <b>{session_id}</b>"
+                        err_text = f"Error: {type(err).__name__}.\n{str(err)}\nFrom {email} at session <b>{app.session_id}</b>"
                         data = {
                             'chat_id': '807358017',
                             'text': err_text,
